@@ -1,0 +1,492 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>APK Depot</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=JetBrains+Mono:wght@400;700&display=swap">
+<style>
+/* Layout: one raw column. Green slab header with an APK file tree, bordered build sheets with hard offset shadows,
+   numbered install steps, an editor-only form, and a black footer slab. */
+:root {
+  --bg: #d4d4cd;
+  --ink: #0a0a0a;
+  --paper: #efefe9;
+  --signal: #3ddc84;
+  --warn: #ff3b1f;
+  --on-signal: #0a0a0a;
+  --on-warn: #0a0a0a;
+  --font-display: 'Archivo Black', Impact, 'Arial Black', sans-serif;
+  --font-body: 'JetBrains Mono', ui-monospace, Menlo, Consolas, monospace;
+  --bw: 3px;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) { --bg: #141413; --ink: #ecece6; --paper: #1f1f1d; --warn: #ff5a43; color-scheme: dark }
+}
+:root[data-theme="dark"] { --bg: #141413; --ink: #ecece6; --paper: #1f1f1d; --warn: #ff5a43; color-scheme: dark }
+
+body { background: var(--bg); color: var(--ink); font: 400 15px/1.55 var(--font-body); }
+*, *::before, *::after { box-sizing: border-box; }
+:focus-visible { outline: 4px solid var(--warn); outline-offset: 2px; }
+
+.wrap {
+  max-width: 64rem; margin: 0 auto;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 2.5rem;
+}
+.band { border-top: var(--bw) solid var(--ink); }
+.band.first { border-top: 0; }
+
+/* Header slab */
+.top { background: var(--signal); color: var(--on-signal); border-bottom: 6px solid var(--ink); }
+.top .wrap { padding-block: 2rem 2.5rem; }
+.hero { display: grid; grid-template-columns: minmax(0, 1fr); gap: 1.5rem; }
+.kicker { margin: 0 0 1rem; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; font-size: .8rem; }
+h1 {
+  margin: 0; font-family: var(--font-display); font-weight: 400;
+  font-size: clamp(3.6rem, 19vw, 9.5rem); line-height: .82; letter-spacing: -.03em; text-transform: uppercase;
+}
+.lede { margin: 1.25rem 0 0; max-width: 34rem; font-weight: 700; font-size: 1.05rem; }
+.tree-wrap { min-width: 0; overflow-x: auto; align-self: end; }
+.tree {
+  margin: 0; padding: .75rem 1rem; border: var(--bw) solid var(--on-signal);
+  font: 400 .85rem/1.45 var(--font-body); width: max-content; max-width: 100%;
+}
+.count {
+  display: inline-flex; gap: .75rem; align-items: baseline; margin-top: 1.5rem;
+  background: var(--on-signal); color: var(--signal); padding: .5rem .9rem;
+  font-weight: 700; letter-spacing: .1em; text-transform: uppercase; font-size: .85rem;
+}
+.count output { font-family: var(--font-display); font-size: 1.6rem; letter-spacing: 0; font-variant-numeric: tabular-nums; }
+@media (min-width: 760px) {
+  .hero { grid-template-columns: minmax(0, 1fr) auto; align-items: end; }
+}
+
+h2 {
+  margin: 0 0 1.75rem; padding-bottom: .6rem; border-bottom: var(--bw) solid var(--ink);
+  font-family: var(--font-display); font-weight: 400; font-size: clamp(1.8rem, 6vw, 2.6rem);
+  line-height: 1; letter-spacing: -.01em; text-transform: uppercase;
+}
+
+/* Build sheets */
+.list { display: grid; gap: 2rem; padding-right: 8px; padding-bottom: 8px; }
+.build, .panel, .note-card {
+  background: var(--paper); border: var(--bw) solid var(--ink); box-shadow: 8px 8px 0 var(--ink);
+  padding: 1.25rem; min-width: 0;
+}
+.build { display: grid; gap: 1.1rem; }
+.build-head { display: flex; flex-wrap: wrap; gap: .5rem 1rem; align-items: center; justify-content: space-between; }
+.build-name {
+  margin: 0; font-family: var(--font-display); font-weight: 400; text-transform: uppercase;
+  font-size: clamp(1.5rem, 5vw, 2.2rem); line-height: 1; overflow-wrap: anywhere; min-width: 0;
+}
+.tag { background: var(--ink); color: var(--bg); padding: .25rem .7rem; font-weight: 700; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+.meta { display: grid; grid-template-columns: max-content minmax(0, 1fr); margin: 0; border-top: 2px solid var(--ink); }
+.meta dt, .meta dd { margin: 0; padding: .45rem 0; border-bottom: 2px solid var(--ink); }
+.meta dt { padding-right: 1.25rem; font-weight: 700; letter-spacing: .08em; font-size: .75rem; text-transform: uppercase; align-self: center; }
+.meta dd { overflow-wrap: anywhere; font-variant-numeric: tabular-nums; }
+.hash { display: flex; flex-wrap: wrap; gap: .6rem; align-items: center; border: 2px solid var(--ink); background: var(--bg); padding: .6rem; }
+.hash-label { font-weight: 700; letter-spacing: .08em; font-size: .75rem; }
+.hash code { flex: 1 1 14rem; min-width: 0; word-break: break-all; font: 400 .75rem/1.4 var(--font-body); }
+.notes { margin: 0; overflow-wrap: anywhere; white-space: pre-wrap; }
+.actions { display: flex; flex-wrap: wrap; gap: 1rem; padding-bottom: 5px; }
+
+.btn {
+  display: inline-block; cursor: pointer; text-decoration: none; text-align: center;
+  font: 700 .95rem/1.2 var(--font-body); letter-spacing: .06em; text-transform: uppercase;
+  padding: .8rem 1.1rem; border: var(--bw) solid var(--ink); border-radius: 0;
+  background: var(--signal); color: var(--on-signal); box-shadow: 5px 5px 0 var(--ink);
+}
+.btn:hover { transform: translate(-2px, -2px); box-shadow: 7px 7px 0 var(--ink); }
+.btn:active { transform: translate(5px, 5px); box-shadow: 0 0 0 var(--ink); }
+.btn[disabled] { opacity: .55; cursor: wait; }
+.btn.small { padding: .35rem .65rem; font-size: .75rem; box-shadow: 3px 3px 0 var(--ink); background: var(--paper); color: var(--ink); }
+.btn.small:hover { box-shadow: 5px 5px 0 var(--ink); }
+.btn.danger { background: var(--warn); color: var(--on-warn); }
+@media (prefers-reduced-motion: no-preference) { .btn { transition: transform .08s linear, box-shadow .08s linear; } }
+@media (prefers-reduced-motion: reduce) { .btn:hover, .btn:active { transform: none; } }
+
+.note-card h3 { margin: 0 0 .5rem; font-family: var(--font-display); font-weight: 400; font-size: clamp(1.4rem, 5vw, 2rem); text-transform: uppercase; line-height: 1.05; }
+.note-card p { margin: 0; max-width: 40rem; }
+.list-status { margin: 1.25rem 0 0; font-weight: 700; min-height: 1.5em; }
+
+/* Install steps */
+.steps { list-style: none; margin: 0; padding: 0; display: grid; gap: 1.1rem; counter-reset: step; max-width: 44rem; }
+.steps li { counter-increment: step; display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 1rem; align-items: start; }
+.steps li::before {
+  content: counter(step); display: grid; place-items: center; width: 3rem; height: 3rem;
+  background: var(--ink); color: var(--bg); font-family: var(--font-display); font-size: 1.5rem;
+}
+.steps p { margin: 0; padding-top: .6rem; }
+
+/* Form */
+.panel { box-shadow: 8px 8px 0 var(--ink); margin-right: 8px; margin-bottom: 8px; }
+.fields { display: grid; gap: 1.1rem; grid-template-columns: repeat(auto-fit, minmax(min(100%, 16rem), 1fr)); }
+.field { display: grid; gap: .35rem; min-width: 0; }
+.field.all { grid-column: 1 / -1; }
+.field label { font-weight: 700; letter-spacing: .08em; font-size: .75rem; text-transform: uppercase; }
+.field .hint { font-size: .8rem; margin: 0; }
+.field input, .field textarea {
+  width: 100%; border: var(--bw) solid var(--ink); border-radius: 0; background: var(--bg); color: var(--ink);
+  padding: .7rem; font: 400 16px/1.4 var(--font-body);
+}
+.field textarea { min-height: 6rem; resize: vertical; }
+.form-actions { display: flex; flex-wrap: wrap; gap: 1rem; align-items: center; margin-top: 1.5rem; padding-bottom: 5px; }
+.form-status { margin: 0; font-weight: 700; min-width: 0; overflow-wrap: anywhere; }
+.form-status.err { background: var(--warn); color: var(--on-warn); padding: .3rem .6rem; }
+
+/* Footer slab */
+.foot { background: var(--ink); color: var(--bg); border-top: 6px solid var(--ink); }
+.foot .wrap { padding-block: 1.75rem; display: grid; gap: .5rem; }
+.foot strong { font-family: var(--font-display); font-weight: 400; font-size: 1.4rem; text-transform: uppercase; }
+.foot p { margin: 0; max-width: 40rem; }
+</style>
+
+<header class="top">
+  <div class="wrap">
+    <div class="hero">
+      <div>
+        <p class="kicker">Android builds / newest first</p>
+        <h1>APK<br>Depot</h1>
+        <p class="lede">Pick a build, download the file, check the hash, install.</p>
+        <div class="count"><span>Builds</span><output id="count" aria-live="polite">--</output></div>
+      </div>
+      <div class="tree-wrap">
+<pre class="tree" aria-hidden="true">app.apk (zip)
+├─ AndroidManifest.xml
+├─ classes.dex
+├─ resources.arsc
+├─ lib/
+├─ res/
+└─ META-INF/</pre>
+      </div>
+    </div>
+  </div>
+</header>
+
+<main>
+  <section class="band first" aria-labelledby="h-builds">
+    <div class="wrap">
+      <h2 id="h-builds">Builds</h2>
+      <div id="list" class="list" aria-live="polite"></div>
+      <p id="list-status" class="list-status" role="status"></p>
+    </div>
+  </section>
+
+  <section class="band" aria-labelledby="h-install">
+    <div class="wrap">
+      <h2 id="h-install">Install</h2>
+      <ol class="steps">
+        <li><p>Download the .apk file from the build you want.</p></li>
+        <li><p>If the build shows a SHA-256 hash, compare it with the hash of the file you downloaded.</p></li>
+        <li><p>Open the file. When Android asks, allow installs from the app you opened it with.</p></li>
+        <li><p>Tap Install.</p></li>
+      </ol>
+    </div>
+  </section>
+
+  <section id="editor" class="band" aria-labelledby="h-add" hidden>
+    <div class="wrap">
+      <h2 id="h-add">Add a build</h2>
+      <form id="add-form" class="panel" novalidate>
+        <div class="fields">
+          <div class="field">
+            <label for="f-name">App name</label>
+            <input id="f-name" type="text" maxlength="80" placeholder="Weather Lite" autocomplete="off" required>
+          </div>
+          <div class="field">
+            <label for="f-version">Version</label>
+            <input id="f-version" type="text" maxlength="40" placeholder="1.0.3" autocomplete="off" required>
+          </div>
+          <div class="field">
+            <label for="f-pkg">Package ID</label>
+            <input id="f-pkg" type="text" maxlength="150" placeholder="com.example.weatherlite" autocomplete="off" autocapitalize="none" spellcheck="false">
+          </div>
+          <div class="field">
+            <label for="f-min">Min Android</label>
+            <input id="f-min" type="text" maxlength="20" placeholder="8.0" autocomplete="off">
+          </div>
+          <div class="field">
+            <label for="f-size">Size in MB</label>
+            <input id="f-size" type="text" inputmode="decimal" maxlength="8" placeholder="12.4" autocomplete="off">
+          </div>
+          <div class="field">
+            <label for="f-sha">SHA-256</label>
+            <input id="f-sha" type="text" maxlength="64" placeholder="64 hex characters" autocomplete="off" autocapitalize="none" spellcheck="false">
+          </div>
+          <div class="field all">
+            <label for="f-url">Download link</label>
+            <input id="f-url" type="url" maxlength="500" placeholder="https://github.com/you/app/releases/download/v1.0.3/app.apk" autocomplete="off" autocapitalize="none" spellcheck="false" required>
+            <p class="hint">Host the .apk on GitHub Releases, Google Drive or similar, then paste the direct link. Links must start with https://.</p>
+          </div>
+          <div class="field all">
+            <label for="f-notes">Release notes</label>
+            <textarea id="f-notes" maxlength="600" placeholder="What changed in this build"></textarea>
+          </div>
+        </div>
+        <div class="form-actions">
+          <button id="f-submit" class="btn" type="submit">Add build</button>
+          <p id="form-status" class="form-status" role="status"></p>
+        </div>
+      </form>
+    </div>
+  </section>
+</main>
+
+<footer class="foot">
+  <div class="wrap">
+    <strong>APK Depot</strong>
+    <p>This page lists builds. Each file is hosted at the link on its card.</p>
+  </div>
+</footer>
+
+<script>
+(function () {
+  var $ = function (id) { return document.getElementById(id); };
+  var listEl = $('list'), countEl = $('count'), editorEl = $('editor'), formEl = $('add-form');
+  var formStatus = $('form-status'), listStatus = $('list-status'), submitBtn = $('f-submit');
+  var state = { phase: 'loading', items: [], canEdit: false, armedId: null, slow: false };
+  var db = null, saving = false, armTimer = null, slowTimer = null, flashTimer = null;
+
+  function el(tag, cls, text) {
+    var n = document.createElement(tag);
+    if (cls) n.className = cls;
+    if (text != null) n.textContent = text;
+    return n;
+  }
+
+  function safeUrl(u) {
+    try {
+      var x = new URL(String(u));
+      return x.protocol === 'https:' ? x.href : '';
+    } catch (e) { return ''; }
+  }
+
+  function fmtDate(ms) {
+    var d = new Date(ms);
+    return isNaN(d.getTime()) ? '' : d.toISOString().slice(0, 10);
+  }
+
+  function fmtSize(n) {
+    return typeof n === 'number' && isFinite(n) && n > 0 ? String(Math.round(n * 10) / 10) + ' MB' : '';
+  }
+
+  function flash(msg) {
+    listStatus.textContent = msg;
+    clearTimeout(flashTimer);
+    flashTimer = setTimeout(function () { listStatus.textContent = ''; }, 5000);
+  }
+
+  function noteCard(title, body) {
+    var c = el('div', 'note-card');
+    c.appendChild(el('h3', null, title));
+    if (body) c.appendChild(el('p', null, body));
+    return c;
+  }
+
+  function copyHash(text, codeEl, btn) {
+    var done = function (label) {
+      btn.textContent = label;
+      setTimeout(function () { btn.textContent = 'Copy'; }, 1600);
+    };
+    var select = function () {
+      try {
+        var r = document.createRange();
+        r.selectNodeContents(codeEl);
+        var s = window.getSelection();
+        s.removeAllRanges();
+        s.addRange(r);
+        done('Selected');
+      } catch (e) { done('Copy'); }
+    };
+    try {
+      navigator.clipboard.writeText(text).then(function () { done('Copied'); }, select);
+    } catch (e) { select(); }
+  }
+
+  function card(it) {
+    var a = el('article', 'build');
+    var head = el('div', 'build-head');
+    head.appendChild(el('h3', 'build-name', it.name || 'Untitled'));
+    if (it.version) head.appendChild(el('span', 'tag', /^\d/.test(it.version) ? 'v' + it.version : it.version));
+    a.appendChild(head);
+
+    var dl = el('dl', 'meta');
+    var rows = [
+      ['Package', it.pkg || ''],
+      ['Min Android', it.minAndroid ? (/^\d/.test(it.minAndroid) ? 'Android ' + it.minAndroid + '+' : it.minAndroid) : ''],
+      ['Size', fmtSize(it.sizeMb)],
+      ['Added', fmtDate(it.createdAt)]
+    ];
+    rows.forEach(function (r) {
+      if (!r[1]) return;
+      dl.appendChild(el('dt', null, r[0]));
+      dl.appendChild(el('dd', null, r[1]));
+    });
+    if (dl.children.length) a.appendChild(dl);
+
+    if (typeof it.sha256 === 'string' && /^[a-f0-9]{64}$/i.test(it.sha256)) {
+      var h = el('div', 'hash');
+      h.appendChild(el('span', 'hash-label', 'SHA-256'));
+      var code = el('code', null, it.sha256.toLowerCase());
+      h.appendChild(code);
+      var cb = el('button', 'btn small', 'Copy');
+      cb.type = 'button';
+      cb.addEventListener('click', function () { copyHash(code.textContent, code, cb); });
+      h.appendChild(cb);
+      a.appendChild(h);
+    }
+
+    if (it.notes) a.appendChild(el('p', 'notes', it.notes));
+
+    var actions = el('div', 'actions');
+    var href = safeUrl(it.url);
+    if (href) {
+      var dlBtn = el('a', 'btn', 'Download APK');
+      dlBtn.href = href;
+      dlBtn.target = '_blank';
+      dlBtn.rel = 'noopener noreferrer';
+      actions.appendChild(dlBtn);
+    } else {
+      actions.appendChild(el('p', 'notes', 'No valid download link.'));
+    }
+    if (state.canEdit) {
+      var armed = state.armedId === it.id;
+      var del = el('button', 'btn danger', armed ? 'Tap again to delete' : 'Delete');
+      del.type = 'button';
+      del.addEventListener('click', function () { onDelete(it.id); });
+      actions.appendChild(del);
+    }
+    a.appendChild(actions);
+    return a;
+  }
+
+  function render() {
+    countEl.textContent = state.phase === 'ready' ? String(state.items.length).padStart(2, '0') : '--';
+    listEl.textContent = '';
+    if (state.phase === 'loading') {
+      listEl.appendChild(noteCard('Loading builds',
+        state.slow ? 'The build list is taking a while to answer. It may be unreachable right now.' : ''));
+      return;
+    }
+    if (state.phase === 'nodb') {
+      listEl.appendChild(noteCard('Build list unavailable',
+        'Builds are shown to signed-in viewers. Sign in to Claude, then open this page again.'));
+      return;
+    }
+    if (state.phase === 'error') {
+      listEl.appendChild(noteCard('Could not load builds', 'Reload the page to try again.'));
+      return;
+    }
+    if (!state.items.length) {
+      listEl.appendChild(noteCard('No builds yet',
+        state.canEdit ? 'Use the form below to add the first build.' : 'The owner has not added a build yet.'));
+      return;
+    }
+    state.items.forEach(function (it) { listEl.appendChild(card(it)); });
+  }
+
+  function onDelete(id) {
+    if (state.armedId !== id) {
+      state.armedId = id;
+      clearTimeout(armTimer);
+      armTimer = setTimeout(function () { state.armedId = null; render(); }, 4000);
+      render();
+      return;
+    }
+    clearTimeout(armTimer);
+    state.armedId = null;
+    render();
+    db.doc('releases/' + id).delete().then(function () {
+      flash('Build deleted.');
+    }, function () {
+      flash('Could not delete that build. Try again.');
+    });
+  }
+
+  function setFormStatus(msg, isErr) {
+    formStatus.textContent = msg;
+    formStatus.className = 'form-status' + (isErr ? ' err' : '');
+  }
+
+  function val(id) { return $(id).value.trim(); }
+
+  function onSubmit(ev) {
+    ev.preventDefault();
+    if (saving || !db) return;
+    var name = val('f-name'), version = val('f-version'), pkg = val('f-pkg'), minA = val('f-min');
+    var sizeRaw = val('f-size'), sha = val('f-sha'), urlRaw = val('f-url'), notes = $('f-notes').value.trim();
+
+    if (!name) return setFormStatus('Enter the app name.', true);
+    if (!version) return setFormStatus('Enter the version.', true);
+    if (pkg && !/^[A-Za-z][A-Za-z0-9_]*(\.[A-Za-z][A-Za-z0-9_]*)+$/.test(pkg))
+      return setFormStatus('Package ID looks like com.example.app.', true);
+    var size = null;
+    if (sizeRaw) {
+      size = parseFloat(sizeRaw.replace(',', '.'));
+      if (!isFinite(size) || size <= 0 || size > 4000) return setFormStatus('Size must be a number of megabytes.', true);
+    }
+    if (sha && !/^[A-Fa-f0-9]{64}$/.test(sha)) return setFormStatus('SHA-256 is 64 hex characters (0-9, a-f).', true);
+    var url = safeUrl(urlRaw);
+    if (!url) return setFormStatus('Download link must be a full address starting with https://.', true);
+
+    var data = { name: name, version: version, url: url, createdAt: Date.now() };
+    if (pkg) data.pkg = pkg;
+    if (minA) data.minAndroid = minA;
+    if (size !== null) data.sizeMb = size;
+    if (sha) data.sha256 = sha.toLowerCase();
+    if (notes) data.notes = notes;
+
+    var id = 'b' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+    saving = true;
+    submitBtn.disabled = true;
+    setFormStatus('Saving…', false);
+    db.doc('releases/' + id).set(data).then(function () {
+      saving = false;
+      submitBtn.disabled = false;
+      formEl.reset();
+      setFormStatus('Build added.', false);
+    }, function (e) {
+      saving = false;
+      submitBtn.disabled = false;
+      var code = e && e.code;
+      if (code === 'invalid_argument') setFormStatus('Only editors can add builds.', true);
+      else if (code === 'quota_exceeded') setFormStatus('The build list is full. Delete an old build first.', true);
+      else setFormStatus('Could not save. Try again.', true);
+    });
+  }
+
+  async function init() {
+    render();
+    if (!window.claude || typeof window.claude.use !== 'function') { state.phase = 'nodb'; render(); return; }
+    var user = null;
+    try { user = await window.claude.use('user'); } catch (e) { user = null; }
+    try { state.canEdit = user ? !!(await user.canEdit()) : false; } catch (e) { state.canEdit = false; }
+    try { db = await window.claude.use('db'); } catch (e) { db = null; }
+    if (!db) { state.phase = 'nodb'; render(); return; }
+
+    editorEl.hidden = !state.canEdit;
+    if (state.canEdit) formEl.addEventListener('submit', onSubmit);
+    slowTimer = setTimeout(function () { state.slow = true; if (state.phase === 'loading') render(); }, 10000);
+
+    db.collection('releases').orderBy('createdAt', 'desc').onSnapshot(function (snap) {
+      if (!snap.metadata.fromCache) clearTimeout(slowTimer);
+      state.items = snap.docs.map(function (d) {
+        var o = d.data() || {};
+        o.id = d.id;
+        return o;
+      });
+      state.phase = 'ready';
+      render();
+    }, function () {
+      clearTimeout(slowTimer);
+      state.phase = 'error';
+      render();
+    });
+  }
+
+  init();
+})();
+</script>
+
+</body></html>
